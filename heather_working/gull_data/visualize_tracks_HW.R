@@ -101,10 +101,10 @@ dat= data.frame(thing=c("Pier 96 recology","recology sunset","oakland airport","
 library(scales)
 library(ggnewscale)
 myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")))
-a=tms %>% dplyr::filter(birdID==201322001) %>% mutate(date=as.Date(UTC,format="%m/%d/%Y %H:%M:%S")) %>% 
+a=tms %>% dplyr::filter(birdID==201822014) %>% mutate(date=as.Date(UTC,format="%m/%d/%Y %H:%M:%S")) %>% 
   mutate(DateTime=parse_date_time(UTC,orders="%m/%d/%Y %H:%M:%S"))
 
-ggplot()+geom_point(data=a,aes(x=Longitude,y=Latitude,color=DateTime))+
+ggplot()+geom_point(data=a,aes(x=Longitude,y=Latitude,color=DateTime),alpha=.5)+
   scale_color_gradientn(colors=myPalette(100),trans=time_trans())+
   ylim(min(a$Latitude),max(a$Latitude))+xlim(min(a$Longitude),max(a$Longitude))+
   theme_classic()+
@@ -114,6 +114,11 @@ ggplot()+geom_point(data=a,aes(x=Longitude,y=Latitude,color=DateTime))+
   new_scale_color()+
   geom_point(data=dat,aes(x=lon,y=lat,color=thing))+
   geom_point(data=trash,aes(x=Longitude,y=Latitude),color="black")
+
+## writing for shiny app
+tmss=tms %>% mutate(date=as.Date(UTC,format="%m/%d/%Y %H:%M:%S")) %>% 
+  mutate(DateTime=parse_date_time(UTC,orders="%m/%d/%Y %H:%M:%S"))
+write.csv(tmss,"/Users/heatherwelch/Dropbox/Gulls/heather_working/github_Gulls_gone_wild/heather_working/gulls_gone_wild_app/data/gulls.csv")
 
 #OTHER STUFF FROM MEGAN ###################################
 
