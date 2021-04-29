@@ -17,7 +17,7 @@ pkgTest <- function(x)
 
 pkgTest("gmt")
 pkgTest("lubridate")
-pkgTest("SDMTools")
+# pkgTest("SDMTools")
 pkgTest("ncdf4")
 pkgTest("RCurl")
 pkgTest("raster")

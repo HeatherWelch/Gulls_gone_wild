@@ -63,3 +63,12 @@ test_ff=raster::distanceFromPoints(raster_back,ff_2)
 writeRaster(test_ff,"/Users/heatherwelch/Dropbox/Gulls/static_rasters/dist_fastfood.grd")
 
 
+
+
+
+####### dist 2 colony 
+colony<-cbind(-123.000313, 37.698321)
+
+dist2colony=raster::distanceFromPoints(raster_back,colony)
+
+writeRaster(dist2colony,"~/Dropbox/Gulls/static_rasters/dist2colony.grd")
