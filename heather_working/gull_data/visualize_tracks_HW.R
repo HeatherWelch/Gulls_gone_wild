@@ -101,7 +101,7 @@ dat= data.frame(thing=c("Pier 96 recology","recology sunset","oakland airport","
 library(scales)
 library(ggnewscale)
 myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")))
-a=tms %>% dplyr::filter(birdID==201822014) %>% mutate(date=as.Date(UTC,format="%m/%d/%Y %H:%M:%S")) %>% 
+a=tms %>% dplyr::filter(birdID==201622008) %>% mutate(date=as.Date(UTC,format="%m/%d/%Y %H:%M:%S")) %>% 
   mutate(DateTime=parse_date_time(UTC,orders="%m/%d/%Y %H:%M:%S"))
 
 ggplot()+geom_point(data=a,aes(x=Longitude,y=Latitude,color=DateTime),alpha=.5)+
