@@ -3,12 +3,83 @@ source("/Users/heatherwelch/Dropbox/Gulls/heather_working/github_Gulls_gone_wild
 library(glue)
 library(wildlifeDI)
 library(adehabitatLT)
+library(rgeos)
+library(spatialEco)
 
-# read in datasets
+## shapes to remove gulls in bay ####
+# bayArea=st_read("/Users/heatherwelch/Dropbox/Gulls/shapefiles/stanford-qh320kj0191-shapefile/qh320kj0191.shp") #%>% 
+#   #arrange(desc(acres)) %>% .[1,]
+# BA=as_Spatial(bayArea)
+# 
+# mat1=matrix(c(-122.6, 37.9,  ## define SST box
+#               -122.6,38,
+#               -122.2,38,
+#               -122.2, 37.9,
+#               -122.6, 37.9),
+#             ncol=2,byrow = T)
+# 
+# p = Polygon(mat1)
+# ps = Polygons(list(p),1)
+# sps = SpatialPolygons(list(ps))
+# 
+# #2
+# df2<- data.frame(xmin=-122.53, xmax=-122.2, ymin=37.8, ymax=37.9)
+# mat1=matrix(c(-122.53, 37.8,  ## define SST box
+#               -122.53,37.9,
+#               -122.2,37.9,
+#               -122.2, 37.8,
+#               -122.53, 37.8),
+#             ncol=2,byrow = T)
+# 
+# p = Polygon(mat1)
+# ps = Polygons(list(p),1)
+# sps2 = SpatialPolygons(list(ps))
+# 
+# #3
+# df3<- data.frame(xmin=-122.44, xmax=-122.10, ymin=37.4, ymax=37.8)
+# mat1=matrix(c(-122.44, 37.4,  ## define SST box
+#               -122.44,37.8,
+#               -122.10,37.8,
+#               -122.10, 37.4,
+#               -122.44, 37.4),
+#             ncol=2,byrow = T)
+# 
+# p = Polygon(mat1)
+# ps = Polygons(list(p),1)
+# sps3 = SpatialPolygons(list(ps))
+# 
+# crs(sps)=crs(BA)
+# crs(sps2)=crs(BA)
+# crs(sps3)=crs(BA)
+
+
+# read in datasets ####
 yr=2019
 fordavid=read.csv("/Users/heatherwelch/Dropbox/Gulls/gull_data/WesternGull_tracks_forDavid.csv")%>% 
   mutate(DateTime=parse_date_time(time.GMT,orders="%Y/%m/%d %H:%M:%S")) %>% 
   mutate(year=year(DateTime)) %>% filter(year==yr)
+
+# df <- data.frame(xmin=-122.6, xmax=-122.2, ymin=37.9, ymax=38)
+# df2<- data.frame(xmin=-122.53, xmax=-122.2, ymin=37.8, ymax=37.9)
+# df3<- data.frame(xmin=-122.44, xmax=-122.10, ymin=37.4, ymax=37.8)
+# 
+# fordavid=fordavid1 %>% mutate(inout=case_when((Longitude<=df$xmin | Latitude<=df$ymin) ~"in",
+#                                           TRUE ~"out")) %>% filter(inout=="in") %>%
+#   mutate(inout=case_when((Longitude<=df2$xmin | Latitude<=df2$ymin) ~"in",
+#                                           TRUE ~"out")) %>% filter(inout=="in") %>%
+#   mutate(inout=case_when((Longitude<=df3$xmin | Latitude<=df3$ymin) ~"in",
+#                                           TRUE ~"out")) %>% filter(inout=="in")
+
+
+# coordinates(fordavid1)=~Longitude+Latitude
+# crs(fordavid1)=crs(BA)
+# fordavid2=erase.point(fordavid1,BA)
+# fordavid3=erase.point(fordavid2,sps)
+# fordavid4=erase.point(fordavid3,sps2)
+# fordavid5=erase.point(fordavid4,sps3)
+# fordavid=as.data.frame(fordavid5) 
+
+
 ais_raw=read.csv(glue("/Users/heatherwelch/Dropbox/Gulls/sfbay_data/sfbay_ais_may_june_{yr}.csv"))%>% 
   mutate(time.GMT=substring(timestamp,first=1,last=19))%>% mutate(DateTime=parse_date_time(time.GMT,orders="%Y/%m/%d %H:%M:%S"))
 # outdir="/Users/heatherwelch/Dropbox/Gulls/Plots/plots_05_26_21_reduced"#;dir.create(outdir)
@@ -23,14 +94,18 @@ library(doParallel, quietly = TRUE)
 registerDoParallel(8)
 
 # test=foreach(i=36:36,.export = c("fordavid","yr","ais_raw","outdir","studyarea","myPalette"),.combine=rbind,.packages = c("glue","tidyverse","raster","wildlifeDI","adehabitatLT"),.verbose=T) %dopar%{
- test=foreach(i=1:length(tracks),.export = c("fordavid","yr","ais_raw","outdir","studyarea","myPalette"),.combine=rbind,.packages = c("glue","tidyverse","raster","wildlifeDI","adehabitatLT"),.verbose=T) %dopar%{
-  print(tracks[i])
+ test=foreach(i=1:length(tracks),.export = c("fordavid","yr","ais_raw","outdir","studyarea","myPalette","bayArea"),.combine=rbind,.packages = c("glue","tidyverse","raster","wildlifeDI","adehabitatLT"),.verbose=T) %dopar%{
+   df <- data.frame(xmin=-122.6, xmax=-122.2, ymin=37.9, ymax=38)
+   df2<- data.frame(xmin=-122.53, xmax=-122.2, ymin=37.8, ymax=37.9)
+   df3<- data.frame(xmin=-122.44, xmax=-122.10, ymin=37.4, ymax=37.8)
+   
+   print(tracks[i])
   gull=fordavid %>% filter(tripID==tracks[i]) %>% mutate(row2=as.character(seq(1:nrow(.))))
   
   ais2=ais_raw %>% 
     filter(DateTime>=(min(gull$DateTime))&DateTime<=(max(gull$DateTime)))%>% 
     filter(lon>=min(gull$Longitude) & lon<=max(gull$Longitude)) %>% 
-    filter(lat>=min(gull$Latitude) & lat<=max(gull$Latitude)) %>% filter(lon<(-122.45))
+    filter(lat>=min(gull$Latitude) & lat<=max(gull$Latitude)) 
   
   ## finding pairs
   xy=gull %>% dplyr::select(Longitude,Latitude) %>% rename(X=Longitude,Y=Latitude)
@@ -59,7 +134,17 @@ registerDoParallel(8)
     testais <- redisltraj(testais, 120, type="time")
     ais_retimed=ld(testais) %>% rename(DateTime=date)%>% mutate(row1=as.character(seq(1:nrow(.))))
     
-    proxx=Prox(testais, testgull, tc=10*60, local=T,GetSimultaneous=T)%>% mutate(gull=tracks[i],vessel=ssvid1[ii])
+    ## finding interactions and removing the ones in the bay
+    proxx=Prox(testais, testgull, tc=10*60, local=T,GetSimultaneous=T)%>% mutate(gull=tracks[i],vessel=ssvid1[ii])%>%
+      left_join(.,gull) %>% left_join(.,ais_retimed,by="row1") %>% 
+        mutate(inout=case_when((Longitude<=df$xmin | Latitude<=df$ymin) ~"in",
+                                   TRUE ~"out")) %>% filter(inout=="in") %>%
+        mutate(inout=case_when((Longitude<=df2$xmin | Latitude<=df2$ymin) ~"in",
+                               TRUE ~"out")) %>% filter(inout=="in") %>%
+        mutate(inout=case_when((Longitude<=df3$xmin | Latitude<=df3$ymin) ~"in",
+                               TRUE ~"out")) %>% filter(inout=="in") %>% 
+      dplyr::select(date1,row1,date2,row2,dt.x,prox,gull,vessel) %>% rename(dt=dt.x)
+    
     proxx2=proxx %>% filter(prox<.01)
     
      if(nrow(proxx2)>1){
@@ -112,5 +197,5 @@ registerDoParallel(8)
    return(master)
  }
 
- write.csv(test,glue("{outdir}/prox_{yr}_5min_.01_int10"))
+ write.csv(test,glue("{outdir}/prox_{yr}_5min_.01_int10.csv"))
  
